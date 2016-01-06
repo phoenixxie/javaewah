@@ -2107,7 +2107,7 @@ public final class EWAHCompressedBitmap implements Cloneable, Externalizable,
     }
 
     public EWAHCompressedBitmap removeFirstBit() {
-        if (sizeInBits == 0) {
+        if (sizeInBits <= 1) {
             return new EWAHCompressedBitmap();
         }
 
@@ -2154,21 +2154,26 @@ public final class EWAHCompressedBitmap implements Cloneable, Externalizable,
             boolean rb = RunningLengthWord.getRunningBit(this.buffer, pos);
             lw = RunningLengthWord.getNumberOfLiteralWords(this.buffer, pos);
 
-            long rbits = rl * WORD_IN_BITS;
-            nbits += rbits;
+            nbits += rl * WORD_IN_BITS;
             long wbits = nbits;
-            long lbits = lw * WORD_IN_BITS;
-            nbits += lbits;
+            nbits += lw * WORD_IN_BITS;
 
             boolean found = false;
             for (int j = lw - 1; j >= 0; --j) {
                 long w = buffer.getWord(pos + 1 + j);
-                if (w != 0L) {
+                int startbits = (int)wbits + j * WORD_IN_BITS;
+                int leftbits = Math.min(WORD_IN_BITS, sizeInBits - startbits);
+                long mask = 0L;
+                if (leftbits != WORD_IN_BITS) {
+                    mask = ~((1L << leftbits) - 1);
+                }
+
+                if ((w | mask) != mask) {
                     found = true;
-                    long mask = 1L << (WORD_IN_BITS - 1);
-                    for (int i = WORD_IN_BITS - 1; i >= 0; --i) {
-                        if (1 == (w & mask)) {
-                            last1 = (int)wbits + j * WORD_IN_BITS + i;
+                    mask = 1L << (leftbits - 1);
+                    for (int i = leftbits - 1; i >= 0; --i) {
+                        if ((w & mask) != 0) {
+                            last1 = startbits + i;
                             break;
                         }
                         mask >>>= 1;
@@ -2177,9 +2182,12 @@ public final class EWAHCompressedBitmap implements Cloneable, Externalizable,
                 }
             }
 
-            if (!found && rb) {
+            if (!found && rb && rl > 0) {
                 last1 = (int) wbits - 1;
             }
+        }
+        if (last1 > sizeInBits - 1) {
+            last1 = sizeInBits - 1;
         }
 
         return last1;
@@ -2197,22 +2205,27 @@ public final class EWAHCompressedBitmap implements Cloneable, Externalizable,
             long rl = RunningLengthWord.getRunningLength(this.buffer, pos);
             boolean rb = RunningLengthWord.getRunningBit(this.buffer, pos);
             lw = RunningLengthWord.getNumberOfLiteralWords(this.buffer, pos);
-
-            long rbits = rl * WORD_IN_BITS;
-            nbits += rbits;
+            nbits += rl * WORD_IN_BITS;
             long wbits = nbits;
-            long lbits = lw * WORD_IN_BITS;
-            nbits += lbits;
+            nbits += lw * WORD_IN_BITS;
 
             boolean found = false;
             for (int j = lw - 1; j >= 0; --j) {
                 long w = buffer.getWord(pos + 1 + j);
-                if (w != full) {
+                int startbits = (int)wbits + j * WORD_IN_BITS;
+                int leftbits = Math.min(WORD_IN_BITS, sizeInBits - startbits);
+
+                long mask = full;
+                if (leftbits != WORD_IN_BITS) {
+                    mask = (1L << leftbits) - 1;
+                }
+
+                if ((w & mask) != mask) {
                     found = true;
-                    long mask = 1L << (WORD_IN_BITS - 1);
-                    for (int i = WORD_IN_BITS - 1; i >= 0; --i) {
-                        if (0 == (w & mask)) {
-                            last0 = (int)wbits + j * WORD_IN_BITS + i;
+                    mask = 1L << (leftbits - 1);
+                    for (int i = leftbits - 1; i >= 0; --i) {
+                        if ((w & mask) == 0) {
+                            last0 = startbits + i;
                             break;
                         }
                         mask >>>= 1;
@@ -2221,12 +2234,19 @@ public final class EWAHCompressedBitmap implements Cloneable, Externalizable,
                 }
             }
 
-            if (!found && !rb) {
+            if (!found && !rb && rl > 0) {
                 last0 = (int) wbits - 1;
             }
         }
+        if (last0 > sizeInBits - 1) {
+            last0 = sizeInBits - 1;
+        }
 
         return last0;
+    }
+
+    public Buffer getBuffer() {
+        return buffer;
     }
 
     /**

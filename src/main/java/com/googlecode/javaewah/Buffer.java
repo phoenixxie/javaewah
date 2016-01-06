@@ -11,7 +11,7 @@ package com.googlecode.javaewah;
  *
  * @author Gregory Ssi-Yan-Kai
  */
-interface Buffer {
+public interface Buffer {
 
     /**
      * Returns the actual size in words
