@@ -34,7 +34,7 @@ public final class RunningLengthWord32 implements Cloneable {
         return getNumberOfLiteralWords(this.buffer, this.position);
     }
 
-    static int getNumberOfLiteralWords(final Buffer32 buffer, final int position) {
+    public static int getNumberOfLiteralWords(final Buffer32 buffer, final int position) {
         return (buffer.getWord(position) >>> (1 + RUNNING_LENGTH_BITS));
     }
 
@@ -47,7 +47,7 @@ public final class RunningLengthWord32 implements Cloneable {
         return getRunningBit(this.buffer, this.position);
     }
 
-    static boolean getRunningBit(final Buffer32 buffer, final int position) {
+    public static boolean getRunningBit(final Buffer32 buffer, final int position) {
         return (buffer.getWord(position) & 1) != 0;
     }
 
@@ -60,7 +60,7 @@ public final class RunningLengthWord32 implements Cloneable {
         return getRunningLength(this.buffer, this.position);
     }
 
-    static int getRunningLength(final Buffer32 buffer, final int position) {
+    public static int getRunningLength(final Buffer32 buffer, final int position) {
         return (buffer.getWord(position) >>> 1) & LARGEST_RUNNING_LENGTH_COUNT;
     }
 

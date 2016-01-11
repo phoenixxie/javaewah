@@ -11,7 +11,7 @@ package com.googlecode.javaewah32;
  *
  * @author Gregory Ssi-Yan-Kai
  */
-interface Buffer32 {
+public interface Buffer32 {
     /**
      * Returns the actual size in words
      */
