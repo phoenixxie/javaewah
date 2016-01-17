@@ -2120,11 +2120,13 @@ public final class EWAHCompressedBitmap implements Cloneable, Externalizable,
         int lw = RunningLengthWord.getNumberOfLiteralWords(answer.buffer, 0);
 
         assert (rl != 0 || lw != 0);
+        int removeWords = 0;
         if (rl == 1) {
             RunningLengthWord.setRunningLength(answer.buffer, 0, 0);
             if (lw == 0) {
                 // remove marker
                 answer.buffer.collapse(0, 1);
+                removeWords = 1;
             }
         } else if (rl > 1) {
             RunningLengthWord.setRunningLength(answer.buffer, 0, rl - 1);
@@ -2132,14 +2134,19 @@ public final class EWAHCompressedBitmap implements Cloneable, Externalizable,
             if (lw == 1) {
                 // remove the marker and the literal word
                 answer.buffer.collapse(0, 2);
+                removeWords = 2;
             } else {
                 // remove first literal word
                 answer.buffer.collapse(1, 1);
+                RunningLengthWord.setNumberOfLiteralWords(answer.buffer, 0, lw - 1);
+                removeWords = 1;
             }
         }
 
         answer.sizeInBits -= WORD_IN_BITS;
-        answer.rlw.position = answer.buffer.sizeInWords() - 1;
+        if (answer.rlw.position >= removeWords) {
+            answer.rlw.position -= removeWords;
+        }
         return answer;
     }
 
